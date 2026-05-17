@@ -1,0 +1,10 @@
+{
+  "name": "comp-immunology",
+  "version": "0.1.0",
+  "description": "Computational immunology toolkit: featurize epitope-parent pairs with ESM C protein language model embeddings for MHC / TCR / immunogenicity modeling.",
+  "author": {
+    "name": "Ukevi"
+  },
+  "license": "MIT",
+  "keywords": ["immunology", "epitope", "mhc", "tcr", "peptide", "esm", "protein-language-model", "featurization", "embedding", "neoantigen"]
+}

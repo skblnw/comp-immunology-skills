@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "comp-immunology-skills",
+  "description": "Computational immunology skills for Claude Code: featurize epitope-parent pairs with ESM C for MHC / TCR / immunogenicity modeling.",
+  "owner": {
+    "name": "Ukevi",
+    "email": "kevin@skblnw.cc"
+  },
+  "plugins": [
+    {
+      "name": "comp-immunology",
+      "description": "Compute direct and parent-context ESM C 300M embeddings for epitope-parent pairs, with a manifest joining each input row to its `.npz` pair plus slice offsets for MHC / TCR / immunogenicity modeling.",
+      "category": "research",
+      "source": "./plugins/comp-immunology"
+    }
+  ]
+}
