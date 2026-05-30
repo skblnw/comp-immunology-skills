@@ -1,0 +1,64 @@
+{
+  "_about": "Smoke-test cases for iedb-assay-gap. Each case lists an allele input and key facts the run should produce. Validates allele resolution, serotype derivation from the MRO ontology, the gap set-difference logic, and output artifacts against the live IEDB IQ-API.",
+  "cases": [
+    {
+      "name": "hla_a0201_serotype_rollup",
+      "input": ["--allele", "HLA-A*02:01"],
+      "expect": {
+        "allele_resolved": true,
+        "iri": "MRO:0001007",
+        "mhc_class": "I",
+        "serotype_name": "HLA-A2",
+        "serotype_iri": "MRO:0001530",
+        "gap_inclusive_gt": 0,
+        "candidates_positive_gt": 0,
+        "artifacts": ["report.html", "gap_HLA_A_02_01.csv", "gap_HLA_A_02_01.json"]
+      }
+    },
+    {
+      "name": "hla_a2402_serotype",
+      "input": ["--allele", "HLA-A*24:02"],
+      "expect": {
+        "allele_resolved": true,
+        "serotype_name": "HLA-A24",
+        "serotype_iri": "MRO:0001533",
+        "mhc_class": "I"
+      }
+    },
+    {
+      "name": "hla_drb10401_classII_serotype",
+      "input": ["--allele", "HLA-DRB1*04:01"],
+      "expect": {
+        "allele_resolved": true,
+        "serotype_name": "HLA-DR4",
+        "serotype_iri": "MRO:0001646",
+        "mhc_class": "II",
+        "note": "Class II: gene node HLA-DRB1 must NOT be mistaken for the serotype HLA-DR4."
+      }
+    },
+    {
+      "name": "exact_mode_no_serotype_rollup",
+      "input": ["--allele", "HLA-A*02:01", "--match-mode", "exact"],
+      "expect": {
+        "gap_exact_equals_gap_inclusive": true,
+        "note": "With --match-mode exact, no serotype-tagged candidates should appear."
+      }
+    },
+    {
+      "name": "bad_allele_fails_fast",
+      "input": ["--allele", "HLA-A2:01"],
+      "expect": {
+        "raises": "ValueError",
+        "error_contains": "not found"
+      }
+    },
+    {
+      "name": "gap_invariant",
+      "input": ["--allele", "HLA-A*02:01"],
+      "expect": {
+        "invariant": "candidates are exactly T-cell epitopes minus binding-tested epitopes; no candidate's structure_id appears in mhc_search for the matched allele set; gap_exact <= gap_inclusive."
+      }
+    }
+  ],
+  "how_to_run": "From the skill directory: python scripts/iedb_assay_gap.py --allele 'HLA-A*02:01' --allele 'HLA-A*24:02' --allele 'HLA-DRB1*04:01' -o /tmp/gap_eval && python3 -c \"import json;d=json.load(open('/tmp/gap_eval/gap_HLA_A_02_01.json'));print('serotype',d['serotype_name'],d['serotype_iri']);print('gap_incl',d['epitope_counts']['gap_inclusive'],'gap_exact',d['epitope_counts']['gap_exact'],'pos',d['n_candidates_positive'])\""
+}

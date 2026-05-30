@@ -32,7 +32,8 @@ Computing both, deduping unique peptides and parent windows, and joining them ba
 ## Skills
 
 <!-- BEGIN SKILLS -- auto-generated from the plugin README; do not edit by hand -->
-- **[epitope-parent-featurize](plugins/comp-immunology/skills/epitope-parent-featurize/SKILL.md)** — Compute two ESM C 300M embeddings per epitope row: the peptide on its own (`direct`) and the same residues inside a window of its parent protein (`parent-context`). Outputs deduped `.npz` files plus a manifest joining each input row to both views with slice offsets. Slice verification (`parent[start-1:end] == epitope`) is enforced to catch silent off-by-one annotations.
+- **[epitope-parent-featurize](plugins/comp-immunology/skills/epitope-parent-featurize/SKILL.md)** — Given a CSV of epitope-to-parent mappings (MHC peptide ↔ source UniProt protein with occurrence range) plus a directory of parent FASTAs, compute **two** ESM C 300M embeddings per row: the epitope on its own (`direct`), and the same residues as they appear inside a window of their parent (`parent-context`). Outputs a manifest joining each input row to its `.npz` pair with slice offsets, so downstream MHC / TCR / immunogenicity models can train on either or both views.
+- **[iedb-assay-gap](plugins/comp-immunology/skills/iedb-assay-gap/SKILL.md)** — For a given MHC allele, find epitopes in the IEDB that **have T-cell assays but no MHC-binding assay** against that allele — the "binding-data gap": peptides proven T-cell antigenic in the allele's context whose direct MHC binding has never been experimentally measured. Allele matching is grounded in the **MHC Restriction Ontology (MRO)** that the IQ-API exposes via the `mhc_allele_iri_search` array, so a serotype rollup (e.g. `HLA-A2` for `HLA-A*02:01`, `HLA-DR4` for `HLA-DRB1*04:01`) is included and every match is tagged by resolution (`exact` / `sub-allele` / `serotype`).
 <!-- END SKILLS -->
 
 ## Typical pipeline
