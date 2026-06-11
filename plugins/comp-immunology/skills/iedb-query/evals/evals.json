@@ -1,0 +1,78 @@
+{
+  "_about": "Live smoke-test cases for iedb-query against the IEDB IQ-API. Each case exercises a CLI subcommand or library function and lists facts the run should produce. Validates counting, keyset-pagination completeness, the generalized ontology subtree/resolution helpers, and CSV/JSON output.",
+  "cases": [
+    {
+      "name": "endpoints_catalog",
+      "cli": ["endpoints"],
+      "expect": {
+        "stdout_contains": ["tcell_search", "elution_id", "structure_id", "host_organism"],
+        "note": "Lists the 8 main endpoints, their cursor keys, and the 6 ontology kinds."
+      }
+    },
+    {
+      "name": "count_estimated_organism_subtree",
+      "cli": ["count", "tcell_search", "--where", "host_organism_iri_search=cs.{NCBITaxon:9606}"],
+      "expect": {
+        "integer_gt": 100000,
+        "note": "Human-host T-cell assays via the NCBITaxon subtree; estimated, fast."
+      }
+    },
+    {
+      "name": "resolve_allele_serotype",
+      "cli": ["resolve", "allele", "HLA-A*02:01"],
+      "expect": {
+        "iri": "MRO:0001007",
+        "mhc_class": "I",
+        "serotype_name": "HLA-A2",
+        "serotype_iri": "MRO:0001530",
+        "note": "Reproduces the MRO values verified for the assay-gap skill."
+      }
+    },
+    {
+      "name": "resolve_organism_forgiving",
+      "cli": ["resolve", "host_organism", "Homo sapiens"],
+      "expect": {
+        "iri": "NCBITaxon:9606",
+        "matched_name": "Homo sapiens (human)",
+        "note": "Exact eq misses the '(human)' suffix; the bounded substring fallback recovers a unique match."
+      }
+    },
+    {
+      "name": "resolve_disease_refused",
+      "cli": ["resolve", "disease", "type 1 diabetes mellitus"],
+      "expect": {
+        "exit_nonzero": true,
+        "stderr_contains": "no scalar IRI",
+        "note": "disease has no scalar IRI column; name->IRI resolution is correctly refused (subtree filtering still works)."
+      }
+    },
+    {
+      "name": "keyset_completeness_multipage",
+      "cli": ["query", "mhc_search", "--where", "mhc_allele_iri_search=cs.{MRO:0000991}", "--select", "structure_id", "--format", "csv", "--out", "/tmp/eval_h2kb.csv"],
+      "expect": {
+        "csv_data_rows_equals_exact_count": true,
+        "exact_count_filter": "mhc_allele_iri_search=cs.{MRO:0000991}",
+        "spans_multiple_pages": true,
+        "note": "H2-Kb MHC rows (>50k, ~6 pages). Row count in the CSV must equal `count --exact` for the same filter, proving keyset pagination drops nothing; exercises the cursor-drop path (select omits elution_id)."
+      }
+    },
+    {
+      "name": "json_output_small",
+      "cli": ["query", "reference_search", "--where", "reference_id=eq.1019857", "--format", "json"],
+      "expect": {
+        "json_array_len": 1,
+        "note": "JSON output path; single known reference."
+      }
+    },
+    {
+      "name": "bad_endpoint_needs_order",
+      "cli": ["query", "curie_map"],
+      "expect": {
+        "raises_or_errors": true,
+        "error_contains": "cursor key",
+        "note": "Endpoints without a known cursor key require an explicit --order; the client fails clearly instead of silently."
+      }
+    }
+  ],
+  "how_to_run": "S=~/.claude/plugins/comp-immunology/skills/iedb-query/scripts/iedb.py; python \"$S\" resolve allele 'HLA-A*02:01'; python \"$S\" count tcell_search --where 'host_organism_iri_search=cs.{NCBITaxon:9606}'; python \"$S\" query mhc_search --where 'mhc_allele_iri_search=cs.{MRO:0000991}' --select structure_id --format csv --out /tmp/eval_h2kb.csv && echo rows=$(($(wc -l < /tmp/eval_h2kb.csv)-1)) && python \"$S\" count mhc_search --where 'mhc_allele_iri_search=cs.{MRO:0000991}' --exact"
+}

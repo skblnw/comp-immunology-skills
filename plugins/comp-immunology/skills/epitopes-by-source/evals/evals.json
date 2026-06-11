@@ -1,0 +1,60 @@
+{
+  "_about": "Smoke-test cases for epitopes-by-source. Each case lists a source input and key facts the run should produce, validating source resolution (alias / NCBITaxon id / ambiguity), the NCBITaxon subtree rollup, the breakdown invariants, post-filters, and output artifacts against the live IEDB IQ-API epitope_search endpoint.",
+  "cases": [
+    {
+      "name": "ebv_alias_rollup",
+      "input": ["EBV"],
+      "expect": {
+        "resolved_iri": "NCBITaxon:10376",
+        "resolution": "alias",
+        "total_approx": 6134,
+        "invariant": "breakdowns.linear + breakdowns.discontinuous == breakdowns.total; sum(mhc_class_dist counts) == total; with_positive <= total",
+        "contains_sequences": ["GLCTLVAML", "RAKFKQLL"],
+        "strains_include": ["Human herpesvirus 4 (Epstein Barr virus)", "Human herpesvirus 4 strain B95-8 (Epstein-Barr virus (strain B95-8))"],
+        "artifacts": ["report.html", "epitopes_NCBITaxon_10376.csv", "epitopes_NCBITaxon_10376.json"]
+      }
+    },
+    {
+      "name": "bare_id_equals_alias",
+      "input": ["10376"],
+      "expect": {
+        "resolved_iri": "NCBITaxon:10376",
+        "resolution": "ncbitaxon-id",
+        "note": "Bare NCBITaxon id resolves to the same set as the EBV alias."
+      }
+    },
+    {
+      "name": "curie_id",
+      "input": ["NCBITaxon:10376"],
+      "expect": {
+        "resolved_iri": "NCBITaxon:10376",
+        "resolution": "ncbitaxon-id"
+      }
+    },
+    {
+      "name": "bogus_name_fails_fast",
+      "input": ["notarealorganismxyz"],
+      "expect": {
+        "raises": "ValueError",
+        "error_contains": "No source organism in IEDB matching",
+        "note": "Lists the alias options and the NCBITaxon-id hint."
+      }
+    },
+    {
+      "name": "linear_only_drops_discontinuous",
+      "input": ["EBV", "--linear-only"],
+      "expect": {
+        "invariant": "breakdowns.discontinuous == 0; every epitope has linear_bucket == 'linear'."
+      }
+    },
+    {
+      "name": "combined_post_filters",
+      "input": ["EBV", "--positive-only", "--mhc-class", "I", "--linear-only"],
+      "expect": {
+        "invariant": "n_after_filters <= n_fetched; every epitope has any_positive == true AND 'I' in mhc_classes AND linear_bucket == 'linear'.",
+        "n_after_filters_approx": 748
+      }
+    }
+  ],
+  "how_to_run": "From the skill directory: python scripts/epitopes_by_source.py EBV -o /tmp/ebv_eval && python3 -c \"import json;d=json.load(open('/tmp/ebv_eval/epitopes_NCBITaxon_10376.json'));m=d['metadata'];b=d['breakdowns'];seqs={e['linear_sequence'] for e in d['epitopes']};print('iri',m['source']['iri'],m['source']['resolution']);print('total',b['total'],'linear+disc',b['linear']+b['discontinuous']);print('GLCTLVAML',('GLCTLVAML' in seqs),'RAKFKQLL',('RAKFKQLL' in seqs))\""
+}
