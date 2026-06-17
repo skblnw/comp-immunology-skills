@@ -36,6 +36,14 @@ A general-purpose, efficient client **and** CLI for the IEDB Query API (IQ-API) 
 
 **Output:** streamed CSV or JSON of the matched records (to file or stdout), an estimated row count printed before any pull, and for `resolve` an IRI + ancestor chain (+ HLA serotype for alleles) with ready-to-paste subtree-filter hints. Companion to `iedb-assay-gap`, which is the specific "T-cell-but-no-binding gap" analysis; `iedb-query` is the general query layer.
 
+### `netmhcpan`
+
+Run the two locally-installed **NetMHCpan** MHC **class I** predictors correctly and parse their output. NetMHCpan-4.2c (native arm64) is the bare command `netMHCpan`; NetMHCpan-4.1b (Intel via Rosetta 2) is `netMHCpan-4.1`. Predicts peptide **presentation** (eluted-ligand, EL) and optional **binding affinity** (BA) for any class I allele — from a peptide list or a protein FASTA — with per-allele `%Rank` and strong/weak (SB/WB) calls. The point of the skill is the version pitfalls that otherwise cost real time: which command is which, the Rosetta requirement, the `gawk` dependency that makes 4.1 silently write a **0-byte `.xls`**, the `.xls` `skiprows` difference (4.2 = 2, 4.1 = 1) and hyphen-vs-underscore column labels, and the rule to **never mix 4.1 and 4.2 EL scores** (the EL network was retrained). Bundles a version-aware parser that auto-detects version + format and melts wide multi-allele `.xls` into tidy long records, plus an install doctor. Class I only — for class II use NetMHCIIpan.
+
+**Triggers:** "Run netMHCpan on these peptides", "Which of these peptides are presented by HLA-A\*02:01?", "Predict MHC class I binders for the patient's HLA type", "What's the EL %rank of GILGFVFTL?", "Scan this FASTA for binders and rank them", "My netmhcpan .xls won't load right in pandas", "netMHCpan-4.1 writes an empty xls", "Compare NetMHCpan 4.1 vs 4.2 calls"
+
+**Output:** the raw NetMHCpan `.xls`/`.out`, plus a tidy long CSV/JSON (one row per peptide-allele) with `el_score, el_rank, ba_score, ba_rank, aff_nM, bind_level, version` via `scripts/parse_netmhcpan.py` (CLI + importable). `scripts/check_install.sh` reports per-version health (commands, tcsh/gawk/Rosetta, a live prediction). Column glossary, allele-naming rules, flag table, and the version-diff table live in `references/netmhcpan_reference.md`.
+
 ## Cross-plugin dependency
 
 This skill shells out to `esm-featurize` (which actually runs ESM C). `esm-featurize` lives in the [`structural-bioinfo`](https://github.com/skblnw/structural-bioinfo-skills) plugin, not here, so install both:

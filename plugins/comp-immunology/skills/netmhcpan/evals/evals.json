@@ -1,0 +1,46 @@
+{
+  "skill_name": "netmhcpan",
+  "evals": [
+    {
+      "id": 0,
+      "name": "present-a0201-strong-binders",
+      "prompt": "I have a list of candidate peptides at /Users/ukevi/.claude/plugins/comp-immunology/skills/netmhcpan-workspace/eval_inputs/candidates.pep. Which of them are predicted to be strongly presented by HLA-A*02:01? Give me the strong binders with their %Rank.",
+      "expected_output": "Runs the 4.2c command netMHCpan with -a HLA-A02:01, identifies strong binders as %Rank_EL <= 0.5 (or BindLevel SB), and lists at least NLVPMVATV and LLFGYPVYV among the strong binders with their ranks.",
+      "files": ["/Users/ukevi/.claude/plugins/comp-immunology/skills/netmhcpan-workspace/eval_inputs/candidates.pep"],
+      "assertions": [
+        {"text": "Used the 4.2c command `netMHCpan` (not netMHCpan-4.1)"},
+        {"text": "Passed the allele as -a HLA-A02:01 (correct colon naming, no asterisk on input)"},
+        {"text": "Defined strong binders by %Rank_EL <= 0.5 or BindLevel SB (not by raw EL score)"},
+        {"text": "Correctly lists NLVPMVATV and LLFGYPVYV as strong binders with rank values"},
+        {"text": "Did NOT report a fabricated or hallucinated rank — values match a real run"}
+      ]
+    },
+    {
+      "id": 1,
+      "name": "multiallele-ba-tidy-table",
+      "prompt": "Run NetMHCpan on the peptides in /Users/ukevi/.claude/plugins/comp-immunology/skills/netmhcpan-workspace/eval_inputs/candidates.pep across HLA-A01:01, HLA-A02:01 and HLA-B07:02, including binding affinity. I want a tidy CSV with one row per peptide-allele pair (columns for EL rank and BA rank) that I can load straight into pandas.",
+      "expected_output": "Runs netMHCpan with -BA and all three alleles and -xls, then produces a tidy/long CSV with one row per (peptide, allele) = 30 rows, with EL rank and BA rank columns correctly parsed (not a wide table, not mis-skipped rows).",
+      "files": ["/Users/ukevi/.claude/plugins/comp-immunology/skills/netmhcpan-workspace/eval_inputs/candidates.pep"],
+      "assertions": [
+        {"text": "Ran netMHCpan with -BA and all three alleles"},
+        {"text": "Produced -xls structured output (rather than scraping stdout)"},
+        {"text": "Final CSV is long/tidy: one row per peptide-allele pair (30 data rows for 10 peptides x 3 alleles)"},
+        {"text": "CSV has distinct EL-rank and BA-rank columns with correct numeric values"},
+        {"text": "Did not corrupt the table by using the wrong .xls skiprows or mis-melting the wide multi-allele blocks"}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "version-compare-4.1-vs-4.2",
+      "prompt": "Reproduce the HLA-A*02:01 presentation predictions for the peptides in /Users/ukevi/.claude/plugins/comp-immunology/skills/netmhcpan-workspace/eval_inputs/candidates.pep using the older NetMHCpan 4.1, and compare them to the current version. Do any of the strong/weak binder calls change between versions?",
+      "expected_output": "Runs BOTH netMHCpan-4.1 and netMHCpan (4.2c) on the same peptides/allele, compares %Rank_EL or SB/WB calls per peptide, reports which calls change, and notes that the two versions are not interchangeable (EL net retrained).",
+      "files": ["/Users/ukevi/.claude/plugins/comp-immunology/skills/netmhcpan-workspace/eval_inputs/candidates.pep"],
+      "assertions": [
+        {"text": "Ran BOTH versions: netMHCpan-4.1 AND netMHCpan (4.2c)"},
+        {"text": "Compared the same peptides across versions (per-peptide EL rank or SB/WB call)"},
+        {"text": "Identified at least one peptide whose binder call or rank differs between versions"},
+        {"text": "Noted the versions are not interchangeable / should not be mixed (EL network retrained)"}
+      ]
+    }
+  ]
+}
